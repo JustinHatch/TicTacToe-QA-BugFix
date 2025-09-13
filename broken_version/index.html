@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tik for Tot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #fce4ec, #e0f2f7, #d4e9f7); /* Soft pastel background */
+            color: #4a4a4a;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .game-container {
+            background-color: #ffffff;
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 90%;
+            width: 420px; /* Slightly wider for better spacing */
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            border: 5px solid #ffccbc; /* Cute border */
+        }
+
+        h1 {
+            color: #e91e63; /* Pink header */
+            margin-bottom: 20px;
+            font-size: 3em;
+            text-shadow: 2px 2px 8px rgba(233, 30, 99, 0.3);
+            letter-spacing: 2px;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 110px); /* Larger cells */
+            grid-template-rows: repeat(3, 110px);
+            gap: 12px;
+            margin: 0 auto;
+            border-radius: 15px;
+            overflow: hidden;
+            background-color: #f8bbd0; /* Light pink board background */
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell {
+            width: 110px;
+            height: 110px;
+            background-color: #ffebee; /* Very light pink cell background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4em; /* Larger emoji size */
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            user-select: none;
+            color: transparent; /* Initially transparent, changed by JS */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1); /* Subtle shadow for emojis */
+        }
+
+        .cell.bottle {
+            color: #4fc3f7; /* Light blue for bottle */
+        }
+
+        .cell.pacifier {
+            color: #ff8a65; /* Light orange for pacifier */
+        }
+
+        .cell:hover:not(.bottle):not(.pacifier) {
+            background-color: #fde2e9; /* Lighter pink on hover */
+            transform: scale(1.08);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        #message {
+            font-size: 1.6em;
+            font-weight: bold;
+            min-height: 1.6em;
+            color: #3f51b5; /* Blue for messages */
+            margin-top: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 25px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(145deg, #81c784, #4caf50); /* Green gradient button */
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: linear-gradient(145deg, #4caf50, #81c784);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 10; /* Sit on top of everything */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Darker overlay */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            margin: auto;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            max-width: 550px;
+            width: 85%;
+            animation: fadeIn 0.5s ease-out;
+            border: 5px solid #ffccbc; /* Matching theme border */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-content h2 {
+            color: #e91e63;
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .modal-content p {
+            font-size: 1.5em;
+            color: #616161;
+            margin-bottom: 40px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.5em;
+            }
+
+            .game-container {
+                padding: 25px;
+                width: 95%;
+            }
+
+            #game-board {
+                grid-template-columns: repeat(3, 90px);
+                grid-template-rows: repeat(3, 90px);
+                gap: 10px;
+            }
+
+            .cell {
+                width: 90px;
+                height: 90px;
+                font-size: 3.5em;
+            }
+
+            #message {
+                font-size: 1.4em;
+            }
+
+            button {
+                padding: 12px 25px;
+                font-size: 1.1em;
+            }
+
+            .modal-content {
+                padding: 30px;
+            }
+
+            .modal-content h2 {
+                font-size: 2.2em;
+            }
+
+            .modal-content p {
+                font-size: 1.3em;
+            }
+        }
+
+        @media (max-width: 400px) {
+            #game-board {
+                grid-template-columns: repeat(3, 75px);
+                grid-template-rows: repeat(3, 75px);
+                gap: 8px;
+            }
+
+            .cell {
+                width: 75px;
+                height: 75px;
+                font-size: 3em;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Tik for Tot</h1>
+        <div id="game-board">
+            <div class="cell" data-cell-index="0"></div>
+            <div class="cell" data-cell-index="1"></div>
+            <div class="cell" data-cell-index="2"></div>
+            <div class="cell" data-cell-index="3"></div>
+            <div class="cell" data-cell-index="4"></div>
+            <div class="cell" data-cell-index="5"></div>
+            <div class="cell" data-cell-index="6"></div>
+            <div class="cell" data-cell-index="7"></div>
+            <div class="cell" data-cell-index="8"></div>
+        </div>
+        <div id="message"></div>
+        <div class="button-group">
+            <button id="reset-button">Restart Playtime</button>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Game Over -->
+    <div id="gameOverModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title"></h2>
+            <p id="modal-message"></p>
+            <div class="modal-buttons">
+                <button id="modal-play-again-button">Play Again!</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game elements
+        const cells = document.querySelectorAll('.cell');
+        const messageDisplay = document.getElementById('message');
+        const resetButton = document.getElementById('reset-button');
+        const gameOverModal = document.getElementById('gameOverModal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalPlayAgainButton = document.getElementById('modal-play-again-button');
+
+        // Game state variables
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = '🍼'; // Player 1 is a baby bottle
+        let isGameActive = true;
+
+        // Winning conditions (indices of cells)
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+            [0, 4, 8], [2, 4, 6]             // Diagonals
+        ];
+
+        /**
+         * Initializes the game by setting up event listeners and resetting the board.
+         */
+        window.onload = function () {
+            // Add click event listener to each cell
+            cells.forEach(cell => {
+                cell.addEventListener('click', handleCellClick);
+            });
+
+            // Add click event listener to the reset button
+            resetButton.addEventListener('click', resetGame);
+
+            // Add click event listener to the modal's play again button
+            modalPlayAgainButton.addEventListener('click', () => {
+                closeModal();
+                resetGame();
+            });
+
+            // Set initial message
+            updateMessage(`It's ${currentPlayer}'s turn!`);
+        };
+
+        /**
+         * Updates the message displayed to the user.
+         * @param {string} msg - The message to display.
+         */
+        function updateMessage(msg) {
+            messageDisplay.textContent = msg;
+        }
+
+        /**
+         * Handles a click on a Tic-Tac-Toe cell.
+         * @param {Event} event - The click event object.
+         */
+        function handleCellClick(event) {
+            const clickedCell = event.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
+
+            // If the cell is already filled or the game is not active, do nothing
+            if (board[clickedCellIndex] !== '' || !isGameActive) {
+                return;
+            }
+
+            // Update the board and display the current player's mark
+            board[clickedCellIndex] = currentPlayer;
+            clickedCell.textContent = currentPlayer;
+            // Add class based on current player for styling (e.g., 'bottle' or 'pacifier')
+            clickedCell.classList.add(currentPlayer === '🍼' ? 'bottle' : 'pacifier');
+
+            // Check for game outcome
+            handleResultValidation();
+        }
+
+        /**
+         * Checks if the current game state results in a win or a draw.
+         */
+        function handleResultValidation() {
+            let roundWon = false;
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                let a = board[winCondition[0]];
+                let b = board[winCondition[1]];
+                let c = board[winCondition[2]];
+
+                if (a === '' || b === '' || c === '') {
+                    continue; // Skip if any cell in the condition is empty
+                }
+                if (a === b && b === c) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                updateMessage(''); // Clear regular message
+                isGameActive = false; // End the game
+                showModal(`${currentPlayer} Wins!`, `Yay! ${currentPlayer} took the win!`);
+                return;
+            }
+
+            // Check for a draw if no one won and the board is full
+            let roundDraw = !board.includes('');
+            if (roundDraw) {
+                updateMessage(''); // Clear regular message
+                isGameActive = false; // End the game
+                showModal('It\'s a Draw!', 'Oh my, it\'s a lovely draw! What a fun game!');
+                return;
+            }
+
+            // If no win or draw, switch to the next player
+            changePlayer();
+        }
+
+        /**
+         * Switches the current player from '🍼' to '👶' or vice-versa.
+         */
+        function changePlayer() {
+            currentPlayer = currentPlayer === '🍼' ? '👶' : '🍼';
+            updateMessage(`It's ${currentPlayer}'s turn!`);
+        }
+
+        /**
+         * Resets the game to its initial state.
+         */
+        function resetGame() {
+            // BUG: The 'board' array is NOT reset here, causing issues on subsequent games.
+            // To fix, uncomment the line below:
+            // board = ['', '', '', '', '', '', '', '', ''];
+            isGameActive = true;
+            currentPlayer = '🍼'; // Always start with the baby bottle
+
+            // Clear cell content and remove styling classes (visual clear)
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('bottle', 'pacifier');
+            });
+
+            updateMessage(`It's ${currentPlayer}'s turn!`); // Update message for new game
+        }
+
+        /**
+         * Displays the custom game over modal.
+         * @param {string} title - The title for the modal.
+         * @param {string} message - The message for the modal.
+         */
+        function showModal(title, message) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            gameOverModal.style.display = 'flex'; // Use flex to center
+        }
+
+        /**
+         * Hides the custom game over modal.
+         */
+        function closeModal() {
+            gameOverModal.style.display = 'none';
+        }
+
+        // Handle touch events for better mobile experience
+        cells.forEach(cell => {
+            cell.addEventListener('touchstart', (e) => {
+                if (e.cancelable) e.preventDefault(); // Prevent scrolling on touch
+                handleCellClick(e);
+            }, { passive: false });
+        });
+        resetButton.addEventListener('touchstart', (e) => {
+            if (e.cancelable) e.preventDefault();
+            resetGame();
+        }, { passive: false });
+        modalPlayAgainButton.addEventListener('touchstart', (e) => {
+            if (e.cancelable) e.preventDefault();
+            closeModal();
+            resetGame();
+        }, { passive: false });
+
+    </script>
+</body>
+</html>
